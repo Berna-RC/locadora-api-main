@@ -1,7 +1,7 @@
+import jwt
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from datetime import datetime
 from database import get_db
 from models.usuario import Usuario
 import repositories.usuario_repository as usuario_repo
@@ -14,12 +14,18 @@ def get_usuario_autenticado(
     db: Session = Depends(get_db),
 ) -> Usuario:
     token_str = credentials.credentials
-    token = usuario_repo.buscar_token(db, token_str)
-    if not token:
-        raise HTTPException(status_code=401, detail="Token inválido")
-    if token.expira_em < datetime.utcnow():
+    try:
+        # Decodifica o JWT — já valida a assinatura e a expiração automaticamente
+        payload = usuario_repo.decodificar_token(token_str)
+        usuario_id = payload.get("sub")
+        if not usuario_id:
+            raise HTTPException(status_code=401, detail="Token inválido")
+    except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expirado")
-    usuario = usuario_repo.buscar_por_id(db, token.usuario_id)
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Token inválido")
+
+    usuario = usuario_repo.buscar_por_id(db, usuario_id)
     if not usuario:
         raise HTTPException(status_code=401, detail="Usuário não encontrado")
     return usuario

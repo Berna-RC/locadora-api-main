@@ -45,7 +45,7 @@ Base.metadata.create_all(bind=engine)
 seed_dados()
 
 app = FastAPI(
-    title="🚗 Locadora de Carros API",
+    title="🚗 Locadora de Carros",
     description="API completa para gerenciamento de locadora de carros",
     version="2.0.0",
 )

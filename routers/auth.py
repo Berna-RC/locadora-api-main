@@ -17,12 +17,12 @@ def registrar(body: UsuarioCriar, db: Session = Depends(get_db)):
     return {"mensagem": "Usuário criado com sucesso", "id": usuario.id}
 
 
-@router.post("/login", summary="Login e obtenção de token")
+@router.post("/login", summary="Login e obtenção de token JWT")
 def login(body: LoginInput, db: Session = Depends(get_db)):
     usuario = usuario_repo.autenticar(db, body.email, body.senha)
     if not usuario:
         raise HTTPException(401, "Credenciais inválidas")
-    token = usuario_repo.criar_token(db, usuario.id)
+    token = usuario_repo.criar_token(usuario.id, usuario.role)
     return {
         "access_token": token,
         "token_type": "bearer",
@@ -30,7 +30,7 @@ def login(body: LoginInput, db: Session = Depends(get_db)):
     }
 
 
-@router.post("/logout", summary="Invalidar token")
-def logout(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)):
-    usuario_repo.deletar_token(db, credentials.credentials)
-    return {"mensagem": "Logout realizado com sucesso"}
+@router.post("/logout", summary="Logout (orientação ao cliente)")
+def logout():
+    # Com JWT o logout é feito no lado do cliente descartando o token
+    return {"mensagem": "Logout realizado. Descarte o token no cliente."}
